@@ -1,0 +1,8 @@
+#!/bin/bash
+CURRENT_BRANCH=`/home/y/bin/git branch | grep \* | awk '{print $2}'`
+if [ "master" != $CURRENT_BRANCH ] ; then
+    /home/y/bin/git checkout master
+fi
+/home/y/bin/git pull
+/home/y/bin/git checkout $CURRENT_BRANCH
+/home/y/bin/git rebase master
