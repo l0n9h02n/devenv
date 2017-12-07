@@ -1,0 +1,40 @@
+#!/bin/bash
+set -x
+#title=$1
+#msg=$2
+title=`git log --pretty=oneline --abbrev-commit | cut -d ' ' -f 2- | head -n 1`
+msg=$1
+me=`basename $0`
+
+if [ -z "$title" ]; then
+    cat << HELP
+$me "TWAUCTIONS-5293 update cod upload file path" "this is comment message"
+HELP
+    exit;
+fi
+
+if [ -z "$msg" ]; then
+    if [ "x" != "x`git config merge.reviewer`" ]; then
+        msg="reviewer: `git config merge.reviewer`"
+    else
+        cat << HELP
+$me "TWAUCTIONS-5293 update cod upload file path" "this is comment message"
+HELP
+        exit;
+    fi
+fi
+
+whoami=`whoami`
+headBranch=`git rev-parse --abbrev-ref HEAD`
+#repo=$(basename `git rev-parse --show-toplevel`)
+repo=`git remote -v | head -n 1 | awk -F'/' '{print $2}' | awk -F'.' '{print $1}'`
+token=`git config user.token`
+repos=`curl -s -u ${token}:x-oauth-basic -H "Accept: application/vnd.github.moondragon-preview+json" -H "Content-Type: application/json" -k https://git.foo.com/api/v3/repos/$whoami/$repo | jq -r ".parent.full_name"`
+
+# get pull request result
+url=`curl -k -s -u $token:x-oauth-basic -H "Accept: application/vnd.github.moondragon-preview+json" -H "Content-Type: application/json" -d "{\"title\":\"${title}\",\"body\":\"${msg}\",\"head\":\"${whoami}:${headBranch}\",\"base\":\"master\"}" -k https://git.foo.com/api/v3/repos/$repos/pulls | jq -r ".html_url"`
+if [ $url == "null" ]; then
+    echo "execute command fail, please check your repos status."
+else
+    echo $url
+fi
